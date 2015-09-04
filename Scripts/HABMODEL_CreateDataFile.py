@@ -13,7 +13,7 @@
 # Spring 2015
 # John.Fay@duke.edu
 
-import sys, os, csv, arcpy
+import sys, os, csv, arcpy, datetime
 arcpy.env.overwriteOutput = 1
 
 # Input variables
@@ -37,11 +37,11 @@ def msg(txt,type="message"):
         arcpy.AddWarning(txt)
     elif type == "error":
         arcpy.AddError(txt)
-        
 ##
 ## ---Processes---
-# Create the species data folder
+# Create the species data folder, 
 outFolder = os.path.join(statsFolder,speciesName)
+                         
 # Create the output folder, if not present
 if os.path.exists(outFolder):
     if arcpy.env.overwriteOutput == True:
@@ -52,10 +52,18 @@ if os.path.exists(outFolder):
 else:
     msg("...{} does not exist, creating it".format(outFolder))
     os.mkdir(outFolder)
+    
+# Set the output folder as a model output parameter    
+arcpy.SetParameterAsText(5,outFolder) #Output Folder
 
 # Set the output species and log filenames
 speciesCSV = os.path.join(outFolder,"AllHUC8Records.csv")
 logFilename = speciesCSV[:-4]+"_metadata.txt"
+
+# Get the current time and initialize the log file
+now = datetime.datetime.now()
+logFile = open(logFilename,'w')
+logFile.write("File created at {}:{} on {}/{}/{}\n".format(now.hour,now.minute,now.month,now.day,now.year))
 
 # Extract Catchments with species
 msg("...Pulling catchment records for {}".format(speciesName))
@@ -76,7 +84,6 @@ for rec in arcpy.da.SearchCursor(sppOnlyTbl,("REACHCODE")):
 msg("{} was found in {} HUC6s and {} HUC8s".format(speciesName,len(HUC6s),len(HUC8s)),"warning")
 
 # Set a filename to save info on the species (list of HUC8s and HUC6s)
-logFile = open(logFilename,'w')
 logFile.write("{} was found in {} HUC6s and {} HUC8s\n".format(speciesName,len(HUC6s),len(HUC8s)))
 logFile.write("HUC8s:\n")
 for HUC8 in HUC8s:
@@ -168,4 +175,4 @@ logFile.close()
 csvFile.close()
 
 # Set the output parameters
-arcpy.SetParameterAsText(4,speciesCSV)
+arcpy.SetParameterAsText(4,speciesCSV)                 #Output CSV 
