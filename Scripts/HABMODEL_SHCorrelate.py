@@ -18,7 +18,7 @@
 # Spring 2015
 # John.Fay@duke.edu
 
-import sys, os, arcpy, numpy
+import sys, os, arcpy, numpy, datetime
 arcpy.env.overwriteOutput = 1
 
 # Input variables
@@ -50,8 +50,10 @@ except:
     sys.exit()
 
 #Initialize the log file
+now = datetime.datetime.now()
 logFile = open(logFilename,'w')
 logFile.write("INFO ON SPECIES-HABITAT CORRELATIONS\n")
+logFile.write("File created at {}:{} on {}/{}/{}\n".format(now.hour,now.minute,now.month,now.day,now.year))
 
 #Read in the column headers
 f = open(speciesCSV,'rt')
