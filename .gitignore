@@ -1,0 +1,20 @@
+# Primary source geodatabases
+NC.gdb
+NHD.gdb
+NHDrasters
+NLCDdata
+
+# HUC6 Geodatabases
+Data/EEP_*.gdb/
+
+# Results GDB
+Data/*.gdb
+Data/*.sde
+
+Scratch/*
+
+# Stat results folder
+Data/Habitat*
+
+# Docs in progress
+Docs/*.pptx
