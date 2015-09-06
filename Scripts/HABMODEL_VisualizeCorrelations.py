@@ -200,15 +200,17 @@ f.write('''            // Instantiate our network object.
         nodes: {
           shape: 'dot',
         },
-                interaction: {
-                    navigationButtons: false,
-                    selectable: true
-                },
-                manipulation: {
-                    enabled: true,
-                    addNode: false,
-                    addEdge: false
-                }
+        interaction: {
+            navigationButtons: false,
+            selectable: true,
+            multiselect: true
+        },
+        manipulation: {
+            enabled: true,
+            addNode: false,
+            addEdge: false,
+            deleteEdge: false
+        }
         };
       network = new vis.Network(container, data, options);
 
