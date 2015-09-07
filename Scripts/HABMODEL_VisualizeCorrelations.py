@@ -210,10 +210,16 @@ f.write('''            // Instantiate our network object.
             addNode: false,
             addEdge: false,
             deleteEdge: false
+        },
+        layout: {
+            randomSeed: 2
         }
         };
       network = new vis.Network(container, data, options);
-
+      network.on("selectNode", function (params) {
+        var n = params["nodes"];
+        document.getElementById("sel").innerHTML = n;
+      });
     }
   </script>
 </head>
