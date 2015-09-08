@@ -184,7 +184,7 @@ f.write('''
         var a = document.body.appendChild(
             document.createElement("a")
         );
-        a.download = "redundantVars.csv";
+        a.download = "redundantVars.html";
         a.href = "data:text/html," + document.getElementById("sel").innerHTML;
         a.click();
     }
@@ -230,7 +230,7 @@ f.write('''            // Instantiate our network object.
       //Set network listeners 
       network.on("selectNode", function (params) {
         var selNodes = params["nodes"];
-        var lineString = "<u>Nodes</u>:<br>";
+        var lineString = "<u>Reduntant Nodes</u>:<br>";
         for (i=0; i<selNodes.length; i++){
             //Get the node name from the nodes list
             selNode = nodes[i];
@@ -263,7 +263,7 @@ for i in range(4):
     f.write(writeString)
 
 f.write('''<br>
-<div id="sel"><u>Nodes</u>:<br><i>none</i></div>
+<div id="sel"><u>Redundant Nodes</u>:<br><i>none</i></div>
 </div>
 <div id="mynetwork"></div>
 </body>
