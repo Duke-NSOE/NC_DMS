@@ -246,8 +246,8 @@ f.write('''            // Instantiate our network object.
 ''')
 
 # Write the species name and the GO! button (which is linked to the writeToFile function)#
-f.write('<h3>{}  <button onclick="writeToFile()">GO!</button> </h3>'.format(speciesName))
-f.write('''<p>Select nodes for deletion then hit the "GO!" button to write node IDs to the screen.</p>
+f.write('<h3>{}</h3>'.format(speciesName))
+f.write('''<p>Select nodes for deletion then hit the "Save" button to save redundant nodes to a file.</p>
 <p>When the node IDs appear, right click the page and save as "delete.txt" in the species folder </p>
 <div id="ranksDiv">Ranks<br>
 ''')
@@ -264,6 +264,7 @@ for i in range(4):
 
 f.write('''<br>
 <div id="sel"><u>Redundant Nodes</u>:<br><i>none</i></div>
+<button onclick="writeToFile()">Save</button> 
 </div>
 <div id="mynetwork"></div>
 </body>
