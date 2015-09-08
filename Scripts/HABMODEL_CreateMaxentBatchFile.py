@@ -4,11 +4,7 @@
 #  this script is configured, the workspace must contain a MaxEnt folder (containing
 #  the MaxEnt.jar file) in the project's root folder. 
 #
-# Inputs include:
-#  (1) the MaxEnt samples with data format (SWD) CSV file, 
-#  (2) a list of field names to exclude by default in the analysis
-#  (3) a list of fields that should be set to categorical
-#  (4) a folder containing projection ASCII files
+# Inputs include the MaxEnt samples with data format (SWD) CSV file, 
 #
 #  Model outputs will be sent to the Outputs folder in the MaxEnt directory.They include
 #   the "runmaxent.bat" batch file and a final list of variables included in the analysis. 
@@ -20,15 +16,12 @@ import sys, os, arcpy
 
 # Input variables
 swdFile = arcpy.GetParameterAsText(0)           # MaxEnt SWD formatted CSV file
-excludeFlds = arcpy.GetParameterAsText(1)       # Fields to toggle off by default
+autorun = arcpy.GetParameterAsText(1)           # Whether or not to set autorun
 
 # Derived variables
 ## Maxent batch file
 maxentFile = os.path.join(os.path.dirname(swdFile),"RunMaxent.bat")
 arcpy.SetParameterAsText(2,maxentFile)
-## Variables file
-variablesFile = os.path.join(os.path.dirname(swdFile),"VariablesUsed.txt")
-arcpy.SetParameterAsText(3,variablesFile)
 
 ## ---Functions---
 def msg(txt,type="message"):
@@ -76,46 +69,53 @@ runString += " outputdirectory={}".format(outDir)
 msg("...Enabling response curves")
 runString += " responsecurves=false"
 
+# disable pictures
+msg("...Disabling drawing pictures")
+runString += " pictures=false"
+
+# disable plots
+msg("...Disabling drawing plots")
+runString += " plots=false"
+
 # enable jackknifing
 msg("...Enabling jackknifing")
 runString += " jackknife=false"
 
-# disable pictures
-msg("...Disabling drawing pictures")
-runString += " pictures=false"
+# write background predictions
+msg("...writing background predictions")
+runString += " writebackgroundpredictions=true"
+
+# write plot data
+msg("...enabling writing plot data")
+runString += " writeplotdata=true"
 
 # Set nodata value 
 msg("...Setting NoData value to -9999")
 runString += " nodata=9999"
 
 # enable 4 threads to speed processing
-msg("...Running Maxent on 4 processors")
+msg("...Running Maxent on 8 processors")
 runString += " threads=8"
 
 # setting to autorun
-msg("...Disabling drawing pictures")
-runString += " autorun=true"
+if autorun == "true":
+    msg("...Setting autorun ON")
+    runString += " autorun=true"
+else:
+    msg("...Setting autorun OFF")
+    runString += " autorun=false"
 
 # turn off background spp
 msg('...Toggling "background" species')
 runString += " togglespeciesselected=background"
-
-# toggle off all species in excludeFields
-## Create list from excludeFields input
-excludeItems = excludeFlds.split(";")
-## Remove species, X, and Y columns from list, if included
-if ("Species") in excludeItems: excludeItems.remove("Species")
-if ("X") in excludeItems: excludeItems.remove("X")
-if ("Y") in excludeItems: excludeItems.remove("Y")
-
-## Loop through list; if header item not in include list, toggle it off
-for excludeItem in excludeItems: 
-    msg("...disabling <{}>".format(excludeItem))
-    runString += " togglelayerselected={}".format(excludeItem)
-            
+           
 # Set stream order and FCODE to categorical fields (if not excluded)
+flds = []
+for fld in arcpy.ListFields(swdFile):
+    flds.append(fld.name)
+
 for catItem in ("StreamOrde","FCODE"):
-    if not (catItem in excludeItems):
+    if catItem in flds:
         msg("...Setting <{}> to categorical".format(catItem))
         runString += " togglelayertype={}".format(catItem)
 
@@ -123,16 +123,6 @@ for catItem in ("StreamOrde","FCODE"):
 msg("Writing commands to batchfile {}".format(maxentFile))
 outFile = open(maxentFile,'w')
 outFile.write(runString)
-outFile.close()
-
-# Write variables to variables file
-msg("Writing final variables list to {}".format(variablesFile))
-outFile = open(variablesFile,'w')
-for fld in arcpy.ListFields(swdFile):
-    #if the field name is not in the exclude item, write it to the list
-    if not (fld.name in (excludeItems) or fld.name in ("Species","X","Y")):
-        msg("...adding <{}>".format(fld.name))
-        outFile.write("{}\n".format(fld.name))
 outFile.close()
 
 
