@@ -62,7 +62,7 @@ colorDict["23"] = "{background:'%s',border:'%s'}" %(col3,border2)
 msg("...creating a list of significant response variables (nodes)")
 nodeDict = {}                       #Create a dictionary of field names/id values
 id = 1                              #Initialize the ID variable
-f = open(shCorrelationsCSV,'rt')   #Open the file
+f = open(shCorrelationsCSV,'rt')    #Open the file
 headers = f.readline()              #Extract/skip the headers line in the CSV
 dataString = f.readline()[:-1]      #Convert the text to string (omitting the newline char at the end
 while dataString:                   #Loop through each line in the CSV
@@ -130,15 +130,17 @@ f = open(visHTML,'wt')
 f.write('''<!doctype html>
 <html>
 <head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
   <title>%s</title>''' %speciesName)
 
 #Continue writing boilerplate
 f.write('''
   <style type="text/css">
     html, body {
-      font: 14pt arial;
+      font: 12pt arial;
     }
-    #nav{
+    #ranksDiv{
         line-height:30px;
         background-color:#eeeeee;
         width:5%;
@@ -178,9 +180,22 @@ f.write('''
     var edges = null;
     var network = null;
 
+	function writeToFile(){
+		var sel = network.getSelection();
+		var doc = document.open("answer.txt","replace");
+		doc.writeln("#Right click and save this file as <delNotes.txt> in species folder")
+		var selNodes = sel["nodes"];
+		for (i=0; i<selNodes.length; i++){
+			//Get the node name from the nodes list
+			selNode = nodes[i];
+			nodeLable = selNode["label"];
+			doc.writeln(nodeLable);
+		}
+		doc.writeln('<form><input type="button" value="Download Now" onClick="window.location.href='yourpage.html'"></form>'
+		doc.close();
+	}
+
     function draw() {
-      // create people.
-      // value corresponds with the age of the person
 ''')
 
 # Insert the nodeString created above
@@ -201,36 +216,39 @@ f.write('''            // Instantiate our network object.
           shape: 'dot',
         },
         interaction: {
-            navigationButtons: false,
+            navigationButtons: true,
+            zoomView: true,
             selectable: true,
             multiselect: true
         },
         manipulation: {
-            enabled: true,
+            enabled: false,
             addNode: false,
             addEdge: false,
             deleteEdge: false
         },
-        layout: {
-            randomSeed: 2
-        }
+        layout: {randomSeed: 2},
+        width: '100%',
+        height: '100%'
         };
       network = new vis.Network(container, data, options);
+      
+      //Set network listeners 
       network.on("selectNode", function (params) {
         var n = params["nodes"];
-        document.getElementById("sel").innerHTML = n;
+        document.getElementById("sel").innerHTML = "Redundant nodes: " + n;
       });
     }
   </script>
 </head>
 <body onload="draw()">
 ''')
-f.write("<h3>{}</h3>".format(speciesName))
-f.write('''<p>
-Scale nodes and edges depending on their value. Hover over the edges to get a popup with more information.
-</p>
-<div id="nav">
-Ranks<br>
+
+# Write the species name and the GO! button (which is linked to the writeToFile function)#
+f.write('<h3>{}  <button onclick="writeToFile()">GO!</button> </h3>'.format(speciesName))
+f.write('''<p>Select nodes for deletion then hit the "GO!" button to write node IDs to the screen.</p>
+<p>When the node IDs appear, right click the page and save as "delete.txt" in the species folder </p>
+<div id="ranksDiv">Ranks<br>
 ''')
 
 #Create the legend: Rank Colors        
@@ -243,23 +261,9 @@ for i in range(4):
     writeString += '    </div>\n'
     f.write(writeString)
 
-###Create the legend: Orignial vs derived
-####Original
-##writeString =  '    <div class="input-color">\n' 
-##writeString += '        <input type="text" value=Original data/>\n'
-##writeString += '        <div class="color-box" style="background-color:white;"></div>\n'
-##writeString += '    </div>\n'
-##f.write(writeString)
-####Derived
-##writeString =  '    <div class="input-color">\n' 
-##writeString += '        <input type="text" value=Derived data />\n'
-##writeString += '        <div class="color-box" style="background-color:white;"></div>\n'
-##writeString += '    </div>\n'
-##f.write(writeString)
-
-
 f.write('''
 </div>
+<div id="sel"><i>Redundant nodes: none</i></div>
 <div id="mynetwork"></div>
 </body>
 </html>''')
