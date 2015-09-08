@@ -143,13 +143,13 @@ f.write('''
     #ranksDiv{
         line-height:30px;
         background-color:#eeeeee;
-        width:10%;
+        width:10%%;
         float:left;
         padding:5px;	
     }
     #mynetwork {
-            width:85%;
-            height: 600px;
+            width:85%%;
+            height: 750px;
             float:left;
             padding:10px;	
       border: 1px solid lightgray;
@@ -184,13 +184,12 @@ f.write('''
         var a = document.body.appendChild(
             document.createElement("a")
         );
-        a.download = "redundantVars.html";
-        a.href = "data:text/html," + document.getElementById("sel").innerHTML;
+        a.download = "%s_RedundantVars.html";a.href = "data:text/html," + document.getElementById("sel").innerHTML;
         a.click();
     }
 
     function draw() {
-''')
+'''%speciesName)
 
 # Insert the nodeString created above
 f.write(nodeString)
@@ -213,7 +212,8 @@ f.write('''            // Instantiate our network object.
             navigationButtons: true,
             zoomView: true,
             selectable: true,
-            multiselect: true
+            multiselect: true,
+            dragNodes: false
         },
         manipulation: {
             enabled: false,
@@ -233,7 +233,20 @@ f.write('''            // Instantiate our network object.
         var lineString = "<u>Reduntant Nodes</u>:<br>";
         for (i=0; i<selNodes.length; i++){
             //Get the node name from the nodes list
-            selNode = nodes[i];
+            selNodeID = selNodes[i];
+            selNode = nodes[selNodeID - 1];
+            nodeLable = selNode["label"];
+            lineString = lineString + nodeLable + "<br>"
+        };
+        document.getElementById("sel").innerHTML = lineString;
+      });
+      network.on("deselectNode", function (params) {
+        var selNodes = params["nodes"];
+        var lineString = "<u>Reduntant Nodes</u>:<br>";
+        for (i=0; i<selNodes.length; i++){
+            //Get the node name from the nodes list
+            selNodeID = selNodes[i];
+            selNode = nodes[selNodeID - 1];
             nodeLable = selNode["label"];
             lineString = lineString + nodeLable + "<br>"
         };
@@ -247,7 +260,8 @@ f.write('''            // Instantiate our network object.
 
 # Write the species name and the GO! button (which is linked to the writeToFile function)#
 f.write('<h3>{}</h3>'.format(speciesName))
-f.write('''<p>Select nodes for deletion then hit the "Save" button to save redundant nodes to a file.</p>
+f.write('''<p>Select nodes for deletion then hit the "Save" button to save redundant nodes to a file.<br>
+<i>Be sure the file is saved in the stats folder of the given species!</i></p>
 <div id="ranksDiv">Ranks<br>
 ''')
 
