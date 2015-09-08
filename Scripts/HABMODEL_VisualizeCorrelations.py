@@ -143,13 +143,13 @@ f.write('''
     #ranksDiv{
         line-height:30px;
         background-color:#eeeeee;
-        width:5%;
+        width:10%;
         float:left;
         padding:5px;	
     }
     #mynetwork {
-            width:90%;
-            height: 700px;
+            width:85%;
+            height: 600px;
             float:left;
             padding:10px;	
       border: 1px solid lightgray;
@@ -180,20 +180,14 @@ f.write('''
     var edges = null;
     var network = null;
 
-	function writeToFile(){
-		var sel = network.getSelection();
-		var doc = document.open("answer.txt","replace");
-		doc.writeln("#Right click and save this file as <delNotes.txt> in species folder")
-		var selNodes = sel["nodes"];
-		for (i=0; i<selNodes.length; i++){
-			//Get the node name from the nodes list
-			selNode = nodes[i];
-			nodeLable = selNode["label"];
-			doc.writeln(nodeLable);
-		}
-		doc.writeln('<form><input type="button" value="Download Now" onClick="window.location.href='yourpage.html'"></form>'
-		doc.close();
-	}
+    function writeToFile(){
+        var a = document.body.appendChild(
+            document.createElement("a")
+        );
+        a.download = "redundantVars.csv";
+        a.href = "data:text/html," + document.getElementById("sel").innerHTML;
+        a.click();
+    }
 
     function draw() {
 ''')
@@ -235,8 +229,15 @@ f.write('''            // Instantiate our network object.
       
       //Set network listeners 
       network.on("selectNode", function (params) {
-        var n = params["nodes"];
-        document.getElementById("sel").innerHTML = "Redundant nodes: " + n;
+        var selNodes = params["nodes"];
+        var lineString = "<u>Nodes</u>:<br>";
+        for (i=0; i<selNodes.length; i++){
+            //Get the node name from the nodes list
+            selNode = nodes[i];
+            nodeLable = selNode["label"];
+            lineString = lineString + nodeLable + "<br>"
+        };
+        document.getElementById("sel").innerHTML = lineString;
       });
     }
   </script>
@@ -261,9 +262,9 @@ for i in range(4):
     writeString += '    </div>\n'
     f.write(writeString)
 
-f.write('''
+f.write('''<br>
+<div id="sel"><u>Nodes</u>:<br><i>none</i></div>
 </div>
-<div id="sel"><i>Redundant nodes: none</i></div>
 <div id="mynetwork"></div>
 </body>
 </html>''')
