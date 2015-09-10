@@ -132,8 +132,8 @@ for fld in outFldList[2:]: #Skip the first two fields (GRIDCODE and REACHCODE)
 # Insert GRIDCODE and REACHCODE
 fldList.insert(0,"REACHCODE")
 fldList.insert(0,"GRIDCODE")
-fldList.remove("Shape_Length")
-fldList.remove("Shape_Area")
+if "Shape_Length" in fldList: fldList.remove("Shape_Length")
+if "Shape_Area" in fldList: fldList.remove("Shape_Area")
 
 ## WRITE THE SPECIES RECORDS TO THE FILE ##
 msg("...Creating the output species file")
