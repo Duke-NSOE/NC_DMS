@@ -66,7 +66,7 @@ msg("...Setting output directory to {}\n    ".format(outDir))
 runString += " outputdirectory={}".format(outDir)
 
 # enable response curves
-msg("...Enabling response curves")
+msg("...Disabling response curves")
 runString += " responsecurves=false"
 
 # disable pictures
@@ -78,22 +78,22 @@ msg("...Disabling drawing plots")
 runString += " plots=false"
 
 # enable jackknifing
-msg("...Enabling jackknifing")
+msg("...Disabling jackknifing")
 runString += " jackknife=false"
 
-# write background predictions
-msg("...writing background predictions")
-runString += " writebackgroundpredictions=true"
+### write background predictions
+##msg("...writing background predictions")
+##runString += " writebackgroundpredictions=true"
 
-# write plot data
-msg("...enabling writing plot data")
-runString += " writeplotdata=true"
+### write plot data
+##msg("...enabling writing plot data")
+##runString += " writeplotdata=true"
 
 # Set nodata value 
 msg("...Setting NoData value to -9999")
 runString += " nodata=9999"
 
-# enable 4 threads to speed processing
+# enable 8 threads to speed processing
 msg("...Running Maxent on 8 processors")
 runString += " threads=8"
 
@@ -105,9 +105,9 @@ else:
     msg("...Setting autorun OFF")
     runString += " autorun=false"
 
-# turn off background spp
-msg('...Toggling "background" species')
-runString += " togglespeciesselected=background"
+### turn off background spp
+##msg('...Toggling "background" species')
+##runString += " togglespeciesselected=background"
            
 # Set stream order and FCODE to categorical fields (if not excluded)
 flds = []
