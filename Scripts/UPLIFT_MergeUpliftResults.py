@@ -1,21 +1,25 @@
 # UPLIFT_MergeUpliftResults.py
 #
 # Description:
-#  Merges uplift tables for multiple species into a single table
+#  Merges uplift FCs for multiple species into a single FC with average values
 #
-# Summer 2015
+# Fall 2015
 # John.Fay@duke.edu
 
 import sys, os, arcpy, csv, tempfile
 arcpy.env.overwriteOutput = 1
 
 # Input variables
-scenarioPrefix = arcpy.GetParameterAsText(0) #Prefix used to represent scenarion (e.g. BU for buffer)
-scenarioFldr = arcpy.GetParameterAsText(1)   #Folder containing Maxent outputs
-catchmentsFC = arcpy.GetParameterAsText(2)   #Catchments feature class to which results are joined
+scenarioPrefix = arcpy.GetParameterAsText(0)  #Prefix used to represent scenarion (e.g. BU for buffer)
+statsRootFldr = arcpy.GetParameterAsText(1)   #Folder containing all species stats results
+
+# Script variables
+resultsFC = "ME_output.shp"        # The name of the feature class contianing maxent results"
+tmpOutput = "in_memory/tmpOutFC"    # FC name to hold temp output; this format allows alter field command
 
 # Output variables
-outCSV = arcpy.GetParameterAsText(3)         #Output feature class for the species
+outFC = os.path.join(statsRootFldr,"{}_UpliftResults.shp".format(scenarioPrefix))
+arcpy.SetParameterAsText(2,outFC)         #Output feature class for the species
 
 ## ---Functions---
 def msg(txt,type="message"):
@@ -28,78 +32,97 @@ def msg(txt,type="message"):
         arcpy.AddError(txt)
 
 ## ---Processes---
-#Get a list of scenario uplift files
-arcpy.env.workspace = scenarioFldr
-meFiles = arcpy.ListFiles("*{}_maxent.csv".format(scenarioPrefix)) #Maxent results
+#Get a list of species output folders
+msg("Getting list of species folders")
+sppDirs = os.listdir(statsRootFldr)
 
-# Make a copy of the master variables table
-msg("...internalizing variables")
-varTbl = arcpy.CopyRows_management(catchmentsFC,"in_memory/vars")
+#Initialize a list of uplift fields
+upliftFlds = []
 
-# Initialize outFields list - list of fields to write out; start with GRIDCODE
-outFields = ["GRIDCODE"]
+#Loop through the species folders and append the uplift columns to a master FC
+for sppDir in sppDirs:
+    #Truncate the species name to first letter of genus and 1st five letters of species
+    genus,species = sppDir.split("_")
+    sppName = genus[0].upper()+"_"+species[:7]
 
-# Loop through each CSV and join it to the copy
-msg("...looping through uplift files")
-for meFile in meFiles:
-
-    #Extract the species name
-    sppName = meFile[7:-14]
-    #Split the name into genus and species, then shorten it to 1st letter of genus and 1st 5 of spp
-    genus, species = sppName.split("_")
-    sppName = genus[0]+"_"+species[:5]
-
-    #--MAXENT--
-    msg("      processing {} (Maxent)".format(sppName))
-    #Make a local copy (for joining)
-    sppTbl = arcpy.CopyRows_management(meFile, "in_memory/spp")
-    #Join the maxent fields
-    arcpy.JoinField_management(varTbl,"GRIDCODE",sppTbl,"GRIDCODE","{0};{0}_uplift".format(scenarioPrefix))
-    #Rename the joined fields
-    arcpy.AlterField_management(varTbl,"{0}".format(scenarioPrefix),"{0}_LogProb".format(sppName))
-    arcpy.AlterField_management(varTbl,"{0}_uplift".format(scenarioPrefix),"{0}_Uplift".format(sppName))
-    #Add fields to output field list
-    outFields.append("{0}_LogProb".format(sppName))
-    outFields.append("{0}_Uplift".format(sppName))
-
-# Initialize the output CSV file
-msg("...initializing output CSV")
-f = open(outCSV,'wb')
-writer = csv.writer(f)
-
-# Write the header items
-writer.writerow(["GRIDCODE","mean_Uplift"]+outFields[1:])
-
-# Loop thru records and write the data to the CSV file
-msg("...writing data to CSV")
-cur = arcpy.da.SearchCursor(varTbl,outFields)
-for row in cur:
-    #Get the gridcode
-    gridcode = row[0]
+    msg("Processing {} as {}".format(sppDir,sppName))
     
-    #Replace null values with zeros
-    outValues = []
-    for val in row:
-        if not val: outValues.append(0)
-        else: outValues.append(val)
+    #Fields to modify
+    fromFlds = ("PRED__{}".format(scenarioPrefix),"Uplift_{}".format(scenarioPrefix))
+    toFlds = ("{}_{}_pred".format(scenarioPrefix,sppName),"{}_{}_up".format(scenarioPrefix,sppName))
+
+    #Add the new uplift field to the list
+    upliftFlds.append(toFlds[1])
+    
+    #Get the results fc
+    sppFC = os.path.join(statsRootFldr,sppDir,resultsFC)
+
+    if sppDir == sppDirs[0]:
+        #If its the first folder, copy the  ME_output file to the temp outputFC
+        msg("Initializing temporary output feature class")
+        firstFC = os.path.join(sppDirs[0],sppFC)
+        arcpy.CopyFeatures_management(firstFC,tmpOutput)
+
+    else:
+        #Otherwise, join the prediction and uplift fields of the ME_output file to the outputFC
+        msg("...appending fields")
+        arcpy.JoinField_management(tmpOutput,"GRIDCODE",sppFC,"GRIDCODE",fromFlds)
+
+    #Rename last two fields to hold the species name
+    for i in (0,1):
+        fromFld = fromFlds[i]
+        toFld = toFlds[i]
+        arcpy.AlterField_management(tmpOutput,fromFld,toFld,toFld)
+
+##Compute averge uplift across species
+#Make a calculate string from the upliftFlds
+msg("Calculating average uplift")
+msg("...constructing the equation")
+calcString = "("
+for upliftFld in upliftFlds:
+    calcString += "[{}] + ".format(upliftFld)
+
+#Modify the string to calculate averages
+calcString = calcString[:-3] + ") / {}".format(len(upliftFlds))
+
+#Add a field to the output FC for average uplift
+msg("...adding the average field")
+avgFld = "{}_avgUplift".format(scenarioPrefix)
+arcpy.AddField_management(tmpOutput,avgFld,"DOUBLE")
+
+#Apply the calcString
+msg("...calculating average uplift")
+arcpy.CalculateField_management(tmpOutput,avgFld,calcString)
+
+##Compute deciles
+#Add decile field
+msg("...adding the decile field")
+decileFld = "{}_decile".format(scenarioPrefix)
+arcpy.AddField_management(tmpOutput,decileFld,"LONG")
+
+#Get the number of records and determine the quantile size
+numRecs = int(arcpy.GetCount_management(tmpOutput).getOutput(0))
+decileSize = numRecs / 10.0
+#deciles = range(decileSize,numRecs+1,decileSize) #list of decile upper limits
+decile = 1   #Index of decile's upper limit
+ceiling = decileSize  #Initial decile value
+counter = 1 #Counter that increases with each record
+
+#Create the update cursor, sorted on average uplift
+records = arcpy.UpdateCursor(tmpOutput,"","","{}; {}".format(avgFld,decileFld),"{} A".format(avgFld))
+rec = records.next()
+while rec:
+    #Check to see if we've entered a new decile, if so, increase the index
+    if counter > ceiling:       #If the current rec passes the ceiling
+        ceiling += decileSize   #...raise the ceiling
+        decile += 1           #...up the decile value
+    #Assign the quantile to the decileFld
+    rec.setValue(decileFld,decile)
+    records.updateRow(rec)
+    #Move to the next record
+    counter += 1
+    rec = records.next()
         
-    #Initialize running sum variables
-    LogProbSum = 0
-    UpliftSum = 0
-    counter = 0
 
-    #Calculate running sums by looping through columns, set step to 2 as two columns are written
-    for ColIdx in range(1,len(outValues),2):
-        #Running sums of LogProb values, Uplift values, and a counter to calc averages
-        LogProbSum += float(outValues[ColIdx])
-        UpliftSum += float(outValues[ColIdx + 1]) #index offest = 1  
-        counter += 1
-                              
-    #Calculate averages from the sums
-    LogProbAvg = ME_LogProbSum / counter
-    UpliftAvg = ME_UpliftSum / counter
-
-    #Write values to CSV
-    writer.writerow([gridcode,UpliftAvg]+outValues[1:])
-    
-f.close()
+#Save results
+arcpy.CopyFeatures_management(tmpOutput,outFC)
