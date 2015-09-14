@@ -1,28 +1,28 @@
 # UPLIFT_WetlandExpansion.py
 #
-# Description: Computes the amount of Hydric soils within each catchment
-
+# Description: Creates a modified NLCD raster where all non-urban, non-water pixels
+#  that coincide with hydric soils are reclassified as wetland.
+#
+# Requires an NLCD data layer and a connection to the ESRI Hydric Soils layer (which
+#  in turn, requires an organizational account on ArcGIS Online.
+#
+# Fall, 2015
+# John.Fay@duke.edu
+#
 # Import arcpy module
 import sys, os, arcpy
 
-# Check out any necessary licenses
-arcpy.CheckOutExtension("spatial")
-
-#User variables
-NLCDRaster = arcpy.GetParameterAsText(0)
-outRaster =  arcpy.GetParameterAsText(1)
+# Input variables
+responseVarsFC = arcpy.GetParameterAsText(0) # Response variables feature class
+HUCFilter = arcpy.GetParameterAsText(1)      # HUC filter to select catchments to process
+outRaster = arcpy.GetParameterAsText(2)      # Out raster of modified NLCD
+outRespVarsFC = arcpy.GetParameterAsText(3)  # Out feature class of response vars (to modify)
 
 #Set environments
 arcpy.env.overwriteOutput = True
-arcpy.env.cellSize = NLCDRaster
 
-# Get paths
-rootWS = os.path.dirname(sys.path[0])
-dataWS = os.path.join(rootWS,"Data")
-
-# Local variables:
-Service = r'ESRILayers\ESRI Landscape 4\USA_Soils_Hydric_Classification.ImageServer'
-HydricSoilsLayer = "LYR"
+# Check out any necessary licenses
+arcpy.CheckOutExtension("spatial")
 
 # ---Functions---
 def msg(txt,type="message"):
@@ -33,32 +33,48 @@ def msg(txt,type="message"):
         arcpy.AddWarning(txt)
     elif type == "error":
         arcpy.AddError(txt)
+        
+##--PROCESSES--
+# Filter the catchment FC
+msg("Extracting catchments within HUC {}".format(HUCFilter))
+whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
+catchFC = arcpy.Select_analysis(responseVarsFC,outRespVarsFC,whereClause)
 
-## PROCESSES 
-# Process: Make Image Server Layer of the Hydric Soils
-svcName = Service.split("\\")[-1].split(".")[0]
-msg("...linking to {} on ESRIs Server...".format(svcName))
+# Set the extent variable
+inputExtent = arcpy.Describe(catchFC).extent
+arcpy.env.extent = inputExtent
 
-# Process: Extract data from ESRI server
-svcPath = os.path.join(dataWS,Service)
-arcpy.MakeImageServerLayer_management(svcPath, HydricSoilsLayer, "", "", "NORTH_WEST", "Name", "0", "", "30")
+# Check the extent
+extentSize = inputExtent.width * inputExtent.height / 900.0
+extentLimit = 24000 * 24000
+if extentSize > extentLimit:
+    msg("Extent is too big!","warning")
 
-# Setting the extent
-msg("...setting the extent to the NLCD raster")
-arcpy.env.extent = NLCDRaster
 
-# Create a level1 NLCD raster
-msg("...creating level 1 NLCD raster")
-#NLCD1 = arcpy.sa.Int(arcpy.Raster(NLCDRaster) / 10)
+# Get the service layers
+scriptDir = os.path.dirname(sys.argv[0])
+nlcdSvc = os.path.join(scriptDir,"LYRFiles","ESRI Landscape 5","USA_NLCD_2011.ImageServer")
+hydricSvc = os.path.join(scriptDir,"LYRFiles","ESRI Landscape 4","USA_Soils_Hydric_Classification.ImageServer")
 
-# Set hydric soils to wetland, otherwise keep NLCD (Level 1) values
+try:
+    msg("Getting NLCD service layer")
+    NLCDLyr = arcpy.MakeImageServerLayer_management(nlcdSvc,"NLCD_lyr",inputExtent)
+    msg("Getting Hydric Soils service layer")
+    hydricLyr = arcpy.MakeImageServerLayer_management(hydricSvc,"Soils_lyr",inputExtent)
+
+except:
+    msg("Could not make image service layer.","error")
+    msg(arcpy.GetMessages())
+    sys.exit(1)
+
+# Set hydric soils to wetland, otherwise keep NLCD values
 msg("...converting all areas with hydric soils as wetlands")
-hydricNLCD = arcpy.sa.Con(HydricSoilsLayer,90,NLCDRaster,"Value in (2)")
+hydricNLCD = arcpy.sa.Con(hydricLyr,90,NLCDLyr,"Value in (2)")
 
-# Creates a raster where urban areas are zero, otherwise hydric values
+# Createsa raster where urban areas are zero, otherwise hydric values
 msg("...reverting wetlands on developed areas back to developed")
 #Keep urban, set all other areas to hydric
-hydricRaster = arcpy.sa.Con(NLCDRaster,NLCDRaster,hydricNLCD,"VALUE IN (21, 22, 23, 24)")
+hydricRaster = arcpy.sa.Con(NLCDLyr,NLCDLyr,hydricNLCD,"VALUE IN (21, 22, 23, 24)")
 
 # Save the output
 msg("...saving output")
