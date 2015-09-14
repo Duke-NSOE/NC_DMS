@@ -13,7 +13,6 @@ arcpy.CheckOutExtension("spatial")
 speciesName = arcpy.GetParameterAsText(0)
 scenarioName = arcpy.GetParameterAsText(1)   # Prefix used to identify outputs
 statsFolder = arcpy.GetParameterAsText(2)    # Stats root folder containing all species models
-#catchmentFC = arcpy.GetParameterAsText(3)    # Modified Response Vars Table
 
 #Set environments
 arcpy.env.overwriteOutput = True
@@ -64,7 +63,7 @@ checkFile(catchmentFC)
 arcpy.SetParameterAsText(3,catchmentFC)
 
 #Set output parameters
-outCSV = os.path.join(scenarioFolder,"Uplift.csv")
+outCSV = os.path.join(scenarioFolder,"{}_Uplift.csv".format(scenarioName))
 
 
 ##---PROCESSES----
@@ -104,9 +103,11 @@ arcpy.JoinField_management(catchmentFC,"GRIDCODE",tmpTbl,"GRIDCODE",[fldName])
 
 # Add the uplift field
 upliftFldName= "Uplift_{}".format(scenarioName)
-if len(arcpy.ListFields(catchmentFC,upliftFldName)) == 0:
-    msg("Adding the uplift field name")
-    arcpy.AddField_management(catchmentFC,upliftFldName,"DOUBLE")
+if len(arcpy.ListFields(catchmentFC,upliftFldName)) > 0:
+    msg("Removing existing {} field in catchment feature class".format(fldName))
+    arcpy.DeleteField_management(catchmentFC,upliftFldName)
+msg("Adding the uplift field name")
+arcpy.AddField_management(catchmentFC,upliftFldName,"DOUBLE")
 
 # Calculate uplift
 msg("Calculating uplift")
