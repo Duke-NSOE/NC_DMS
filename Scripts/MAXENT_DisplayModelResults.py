@@ -47,11 +47,6 @@ msg("...Locating Maxent output folder")
 maxentFolder = os.path.join(statsFolder,speciesName,maxentName)
 checkFile(maxentFolder)
 
-#Get the maxent log file
-msg("...Locating Maxent log file")
-logFN = os.path.join(maxentFolder,"maxent.log")
-checkFile(logFN)
-
 #Get the maxent results CSV file
 msg("...Locating Maxent results file")
 resultsFN = os.path.join(maxentFolder,"maxentResults.csv")
@@ -63,12 +58,6 @@ logisticFN = os.path.join(maxentFolder,speciesName+".csv")
 checkFile(logisticFN)
 
 ## ---Processes---
-#Open the Maxent log file and read its contents (1 line)
-msg("Opening Maxent log file...")
-f = open(logFN,"r")
-lines = f.readlines()
-f.close()
-
 #Get the threshold 
 msg("...Extracting the probability threshold")
 f = open(resultsFN,'rt')
