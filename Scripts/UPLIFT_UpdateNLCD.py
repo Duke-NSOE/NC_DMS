@@ -11,7 +11,6 @@ arcpy.CheckOutExtension("spatial")
 #User variables
 respvarsFC = arcpy.GetParameterAsText(0)     # Copy of the response vars table *THIS WILL BE MODIFIED*
 nlcdRaster = arcpy.GetParameterAsText(1)     # NLCD raster datasets (original or modified)
-catchmentRaster = arcpy.GetParameterAsText(2)# Catchment raster, used to compute catchment stats
 
 #Set environments
 arcpy.env.overwriteOutput = True
@@ -40,7 +39,7 @@ NLCD1_raster = arcpy.sa.Int(arcpy.Raster(nlcdRaster) / 10)
 
 # Tabulate areas of each class within the catchments
 msg("...Tabulating NLCD areas in each catchment")
-nlcdStats = arcpy.sa.TabulateArea(catchmentRaster,"VALUE",NLCD1_raster,"VALUE","in_memory/statsTbl")
+nlcdStats = arcpy.sa.TabulateArea(respvarsFC,"GRIDCODE",NLCD1_raster,"VALUE","in_memory/statsTbl")
 
 # Make a table view of the respVarsFC to enable joins
 msg("...creating table view of response variables")
@@ -48,7 +47,7 @@ rvLyr = arcpy.MakeTableView_management(respvarsFC,rvLyr)
 
 # Join updateTbl to layer
 msg("...joining tables")
-rvJoin = arcpy.AddJoin_management(rvLyr,"GRIDCODE",nlcdStats,"VALUE")
+rvJoin = arcpy.AddJoin_management(rvLyr,"GRIDCODE",nlcdStats,"GRIDCODE")
 
 # Loop through the update fields
 for fld in arcpy.ListFields(nlcdStats)[2:]:
@@ -69,4 +68,4 @@ for fld in arcpy.ListFields(nlcdStats)[2:]:
     arcpy.CalculateField_management(rvLyr,updateFld,"[{}] / 1000".format(valueFld))
 
 #Return the merged table
-arcpy.SetParameterAsText(3,respvarsFC)
+arcpy.SetParameterAsText(2,respvarsFC)
