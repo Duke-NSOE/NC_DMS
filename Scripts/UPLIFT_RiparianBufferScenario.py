@@ -12,7 +12,8 @@ import sys, os, arcpy
 
 #User variables
 origRVTbl = arcpy.GetParameterAsText(0)
-upliftTbl = arcpy.GetParameterAsText(1)
+HUCFilter = arcpy.GetParameterAsText(1)
+upliftTbl = arcpy.GetParameterAsText(2)
 
 #Set environments
 arcpy.env.overwriteOutput = True
@@ -29,8 +30,10 @@ def msg(txt,type="message"):
 
 ## PROCESSES 
 #Make a copy of the responseVariableTable
-msg("Copying original data to ResponseVarsBU")
-upliftTbl = arcpy.CopyRows_management(origRVTbl,upliftTbl)
+msg("Copying original data to {}".format(upliftTbl))
+whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
+arcpy.Select_analysis(origRVTbl,upliftTbl,whereClause)
+#upliftTbl = arcpy.arcpy.CopyFeatures_management(origRVTbl,upliftTbl)
 
 #Increase Forest(4) flowlength to sum of Barren(3), Shrubland(5), Herbaceous(7), Cultivated(8), and Wetland(9)
 msg("Adding lengths in Barren(3), Shrubland(5), Herbaceous(7), Cultivated(8), and Wetland(9) to existing Forest(4)")
