@@ -41,18 +41,22 @@ def checkFile(fileName):
 ## ---Derived inputs---
 #Set the maxent scenario name to Output, if none given
 if maxentName in ("", "#"): maxentName = "Output"
+
 #Set the full path to the maxent scenario folder
 msg("...Locating Maxent output folder")
 maxentFolder = os.path.join(statsFolder,speciesName,maxentName)
 checkFile(maxentFolder)
+
 #Get the maxent log file
 msg("...Locating Maxent log file")
 logFN = os.path.join(maxentFolder,"maxent.log")
 checkFile(logFN)
+
 #Get the maxent results CSV file
 msg("...Locating Maxent results file")
 resultsFN = os.path.join(maxentFolder,"maxentResults.csv")
 checkFile(resultsFN)
+
 msg("...Locating Maxent prediction file")
 #Get the maxent predictions file
 logisticFN = os.path.join(maxentFolder,speciesName+".csv")
@@ -65,12 +69,12 @@ f = open(logFN,"r")
 lines = f.readlines()
 f.close()
 
-#Get the threshold (column 255 in the maxentResults.csv)
+#Get the threshold 
 msg("...Extracting the probability threshold")
 f = open(resultsFN,'rt')
 reader = csv.reader(f)
-row1 = reader.next()
-row2 = reader.next()
+row1 = reader.next() #Header line
+row2 = reader.next() #Values line
 f.close()
 idx = row1.index('Balance training omission, predicted area and threshold value logistic threshold')
 threshold = row2[idx]
@@ -80,7 +84,7 @@ msg("   Maxent logistic threshold set to {}".format(threshold),"warning")
 msg("...Converting maxent prediction file to a table")
 logTbl = arcpy.CopyRows_management(logisticFN,"in_memory/Logistic")
 
-#Get the logistic field name
+#Get the logistic field name (last field in the CSV table)
 logFld = arcpy.ListFields(logTbl)[-1].name
 
 #Make a feature layer of the catchment features (to trim fields)
@@ -88,7 +92,7 @@ msg("...Creating a feature layer of catchment features")
 fldInfo = arcpy.FieldInfo()
 for f in arcpy.ListFields(SpeciesFC):
     fName = f.name
-    if fName in ("OBJECTID","Shape","GRIDCODE","REACHODE",speciesName):
+    if fName in ("OBJECTID","Shape","GRIDCODE","REACHCODE",speciesName):
         fldInfo.addField(fName,fName,"VISIBLE","")
     else:
         fldInfo.addField(fName,fName,"HIDDEN","")
@@ -103,8 +107,6 @@ else:
 #Make a copy of the feature layer
 msg("Selecting catchment features")
 tmpFC = arcpy.Select_analysis(catchLyr, "in_memory\Results", whereClause)
-
-#Alter the last field to be "Observed"
 
 #Join the Maxent results to it
 msg("...Joining maxent results to catchment features")
