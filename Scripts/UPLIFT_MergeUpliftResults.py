@@ -12,14 +12,14 @@ arcpy.env.overwriteOutput = 1
 # Input variables
 scenarioPrefix = arcpy.GetParameterAsText(0)  #Prefix used to represent scenarion (e.g. BU for buffer)
 statsRootFldr = arcpy.GetParameterAsText(1)   #Folder containing all species stats results
+HUCFilter = arcpy.GetParameterAsText(2)
 
 # Script variables
 resultsFC = "ME_output.shp"        # The name of the feature class contianing maxent results"
-tmpOutput = "in_memory/tmpOutFC"    # FC name to hold temp output; this format allows alter field command
+tmpOutput = "in_memory/tmpOutFC"   # FC name to hold temp output; this format allows alter field command
 
 # Output variables
-outFC = os.path.join(statsRootFldr,"{}_UpliftResults.shp".format(scenarioPrefix))
-arcpy.SetParameterAsText(2,outFC)         #Output feature class for the species
+outFC = arcpy.GetParameterAsText(3)      #Output feature class for the species
 
 ## ---Functions---
 def msg(txt,type="message"):
@@ -61,7 +61,9 @@ for sppDir in sppDirs:
         #If its the first folder, copy the  ME_output file to the temp outputFC
         msg("Initializing temporary output feature class")
         firstFC = os.path.join(sppDirs[0],sppFC)
-        arcpy.CopyFeatures_management(firstFC,tmpOutput)
+        #arcpy.CopyFeatures_management(firstFC,tmpOutput)
+        whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
+        arcpy.Select_analysis(firstFC,tmpOutput,whereClause)
 
     else:
         #Otherwise, join the prediction and uplift fields of the ME_output file to the outputFC
