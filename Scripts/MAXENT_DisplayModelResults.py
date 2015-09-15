@@ -17,7 +17,8 @@ statsFolder = arcpy.GetParameterAsText(3)  # Folder containing all species outpu
 maxentName = arcpy.GetParameterAsText(4)   #(Optional) Name of folder containing maxent output; defaults to OUTPUT
 
 # Output
-outFC = arcpy.GetParameterAsText(5) #Output feature class listing habitat likelihood for the species
+outFC = os.path.join(statsFolder,speciesName,"ME_output.shp")
+arcpy.SetParameterAsText(5,outFC) #Output feature class listing habitat likelihood for the species
 
 ## ---Functions---
 #Message Function
