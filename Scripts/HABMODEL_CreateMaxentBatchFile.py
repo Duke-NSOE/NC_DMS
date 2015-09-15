@@ -83,7 +83,7 @@ runString += " jackknife=false"
 
 ### write background predictions
 ##msg("...writing background predictions")
-##runString += " writebackgroundpredictions=true"
+##runString += " writebackgroundpredictions=false"
 
 ### write plot data
 ##msg("...enabling writing plot data")
@@ -105,9 +105,9 @@ else:
     msg("...Setting autorun OFF")
     runString += " autorun=false"
 
-### turn off background spp
-##msg('...Toggling "background" species')
-##runString += " togglespeciesselected=background"
+# turn off background spp
+msg('...Toggling "Background" species')
+runString += " togglespeciesselected=Background"
            
 # Set stream order and FCODE to categorical fields (if not excluded)
 flds = []
