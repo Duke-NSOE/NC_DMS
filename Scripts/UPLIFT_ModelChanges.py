@@ -23,8 +23,7 @@ rootWS = os.path.dirname(sys.path[0])
 dataWS = os.path.join(rootWS,"Data")
 
 # Local variables:
-rvLyr = "RespVarsLyr"
-reuse = False
+reuse = True
 
 ##---Functions---
 def msg(txt,type="message"):
