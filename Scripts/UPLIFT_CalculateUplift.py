@@ -109,19 +109,26 @@ curFldName = sppName + "_cur"                   #Likelihood under current condit
 altFldName = sppName + "_" + scenarioName       #Likelihood under alternate conditions
 upliftFldName = sppName + "_up"               #Uplift (alternate - current)
 
-# Write the files to an output csv file
-outFile = open(outCSV,'w')
-outFile.write("GRIDCODE,{},{},{}\n".format(curFldName,altFldName,upliftFldName))
+# Create the output table
+arcpy.CreateTable_management(outGDB,"{}_{}".format(speciesName,HUCFilter))
+arcpy.AddField_management(outTbl,"GRIDCODE","LONG")
+arcpy.AddField_management(outTbl,curFldName,"DOUBLE")
+arcpy.AddField_management(outTbl,altFldName,"DOUBLE")
+arcpy.AddField_management(outTbl,upliftFldName,"DOUBLE")
+
+# Create an insert cursor and add records
+cursor = arcpy.da.InsertCursor(outTbl,"*")
 for i in range(len(gridcodes)):
     gridcode = int(gridcodes[i])
     currentLikelihood = float(currentPredictions[i])
     alternateLikelihood = float(upliftPredictions[i])
     uplift = alternateLikelihood - currentLikelihood
-    outFile.write("{},{},{},{}\n".format(gridcode,currentLikelihood,alternateLikelihood,uplift))
+    cursor.insertRow((i,gridcode,currentLikelihood,alternateLikelihood,uplift))
+del cursor
 
-# Make a table from the CSV to enable joining
-msg("Saving data to {}".format(outTbl))
-tmpTbl = arcpy.CopyRows_management(outCSV,outTbl)
+tblCount  = int(arcpy.GetCount_management(outCSV).getOutput(0))
+if not(tblCount == len(gridcodes)):
+    msg("counts don't match: {},{}".format(tblCount,len(gridcodes)),"error")
 
 ## Clean up ASC files
 fileNames = os.listdir(scenarioFolder)
@@ -132,41 +139,3 @@ for fName in fileNames:
     if ext == 'asc':
         if speciesName not in name and name not in ("GRIDCODE"):
             os.remove(os.path.join(scenarioFolder,fName))
-
-
-'''
-#Make a feature layer of the catchment features (to trim fields)
-msg("Initializing the output catchment feature class")
-msg("...Selecting columns")
-fldInfo = arcpy.FieldInfo()
-for f in arcpy.ListFields(speciesFC):
-    fName = f.name
-    if fName in ("OBJECTID","Shape","GRIDCODE","REACHCODE",speciesName):
-        fldInfo.addField(fName,fName,"VISIBLE","")
-    else:
-        fldInfo.addField(fName,fName,"HIDDEN","")
-catchLyr = arcpy.MakeFeatureLayer_management(speciesFC,"catchLyr","","",fldInfo)
-
-# Select records from the Species Occurrence feature class
-msg("...Writing to temp feature class")
-whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
-tmpFC = arcpy.Select_analysis(catchLyr,outFC,whereClause)
-
-# Join the CSV to the catchment FC
-msg("Joining uplift data to catchment FC")
-fldNames = ["Current",altFldName]
-arcpy.JoinField_management(tmpFC,"GRIDCODE",tmpTbl,"GRIDCODE","Current;{}".format(altFldName))
-
-# Add the uplift field
-upliftFldName= "Uplift_{}".format(scenarioName)
-msg("Adding the uplift field")
-arcpy.AddField_management(tmpFC,upliftFldName,"DOUBLE")
-
-# Calculate uplift
-msg("Calculating uplift")
-arcpy.CalculateField_management(tmpFC,upliftFldName,"[{}] - [Current]".format(altFldName))
-
-# Save the file
-msg("Saving the output")
-#arcpy.CopyFeatures_management(tmpFC,outFC)
-'''
