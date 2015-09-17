@@ -80,7 +80,6 @@ projectedASC = os.path.join(scenarioFolder,"{}_{}_Output.asc".format(speciesName
 checkFile(projectedASC)
 
 #Set output parameters
-outCSV = os.path.join(scenarioFolder,"{}_uplift.csv".format(scenarioName))
 outTbl = os.path.join(outGDB,"{}_{}".format(speciesName,HUCFilter))
 arcpy.SetParameterAsText(5,outTbl)
 
@@ -126,7 +125,7 @@ for i in range(len(gridcodes)):
     cursor.insertRow((i,gridcode,currentLikelihood,alternateLikelihood,uplift))
 del cursor
 
-tblCount  = int(arcpy.GetCount_management(outCSV).getOutput(0))
+tblCount  = int(arcpy.GetCount_management(outTbl).getOutput(0))
 if not(tblCount == len(gridcodes)):
     msg("counts don't match: {},{}".format(tblCount,len(gridcodes)),"error")
 
