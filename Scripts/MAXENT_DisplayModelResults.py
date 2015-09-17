@@ -128,7 +128,6 @@ msg("...Changing observed nulls to 0")
 pyCode = "def checkVal(val):\n if val == 1:\n  return 1\n else:\n  return 0"
 arcpy.CalculateField_management(tmpFC,"Observed","checkVal(!Observed!)","PYTHON",pyCode)
 
-#Remove fields
 msg("Writing output")
 arcpy.CopyFeatures_management(tmpFC,outFC)
 

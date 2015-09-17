@@ -16,6 +16,7 @@ Scratch/*
 # Stat results folder
 Data/Habitat*
 Data/MACP
+Data/PiedmontStats
 
 # Docs in progress
 Docs/*.pptx
