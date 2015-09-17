@@ -1,7 +1,16 @@
 # UPLIFT_MergeUpliftResults.py
 #
 # Description:
-#  Merges uplift FCs for multiple species into a single FC with average values
+#  Merges uplift FCs for multiple species into a single FC with average values.
+#
+# Overview:
+#  Loops through each [species] folder in the stats root folder, and then locates
+#  the Scenario folder (e.g. "BU_Output") within. In this folder should be the uplift
+#  feature class for the species listing the observed, current likelihood, scenario
+#  likelihood, scenario prediction, and computed uplift.
+#
+#  Uplift scores across all species are conveyed to the output feature class and a
+#  mean score across all scpecies is calculated.
 #
 # Fall 2015
 # John.Fay@duke.edu
@@ -10,16 +19,11 @@ import sys, os, arcpy, csv, tempfile
 arcpy.env.overwriteOutput = 1
 
 # Input variables
-scenarioPrefix = arcpy.GetParameterAsText(0)  #Prefix used to represent scenarion (e.g. BU for buffer)
-statsRootFldr = arcpy.GetParameterAsText(1)   #Folder containing all species stats results
-HUCFilter = arcpy.GetParameterAsText(2)
+scenarioName = arcpy.GetParameterAsText(0)  #Prefix used to represent scenarion (e.g. BU for buffer)
+statsRootFldr = arcpy.GetParameterAsText(1) #Folder containing all species stats results
+catchmentFC = arcpy.GetParameterAsText(2)   #Catchment features, used to add uplift values to
+HUCFilter = arcpy.GetParameterAsText(3)     #HUC Filter used to find tables and select appropriate catchment from the FC
 
-# Script variables
-resultsFC = "ME_output.shp"        # The name of the feature class contianing maxent results"
-tmpOutput = "in_memory/tmpOutFC"   # FC name to hold temp output; this format allows alter field command
-
-# Output variables
-outFC = arcpy.GetParameterAsText(3)      #Output feature class for the species
 
 ## ---Functions---
 def msg(txt,type="message"):
@@ -30,51 +34,67 @@ def msg(txt,type="message"):
         arcpy.AddWarning(txt)
     elif type == "error":
         arcpy.AddError(txt)
+        
+def checkFile(fileName):
+    if not os.path.exists(fileName):
+        msg("{} not found.\nExiting.".format(fileName),"error")
+        sys.exit(1)
+    else: return
+    
+## ---Set derived variables---
+msg("Locating scenario geodatabase")
+upliftGDB = os.path.join(statsRootFldr,"{}_Uplift.gdb".format(scenarioName))
+checkFile(upliftGDB)
+
+#Set the output table
+outFC = os.path.join(upliftGDB,"{}_Uplift{}".format(scenarioName,HUCFilter))
+arcpy.SetParameterAsText(4,outFC)
 
 ## ---Processes---
-#Get a list of species output folders
-msg("Getting list of species folders")
-sppDirs = os.listdir(statsRootFldr)
+#Get a list of species uplift tables in the uplift GDB corresponding to the uplift filter
+msg("Getting list of species tables")
+arcpy.env.workspace = upliftGDB
+sppTbls = arcpy.ListTables("*{}".format(HUCFilter))   #Get all the species tables (they have two underscores in them...)
+#Exit if no tables were found. 
+if len(sppTbls) == 0:
+    msg("No results for HUC {}.\nExiting".format(HUCFilter),"error")
+    sys.exit(1)
 
-#Initialize a list of uplift fields
+#Select catchments into the output feature class
+msg("Initializing output feature class")
+msg("...Selecting features in HUC {}".format(HUCFilter))
+whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
+arcpy.Select_analysis(catchmentFC,outFC,whereClause)
+
+#Remove fields (the last three in the sppTbl)
+msg("...removing extra fields")
+killFlds = []
+for fld in arcpy.ListFields(outFC):
+    if not fld.name.upper() in ("OBJECTID","SHAPE","GRIDCODE","REACHCODE","SHAPE_AREA","SHAPE_LENGTH"):
+        killFlds.append(fld.name)
+arcpy.DeleteField_management(outFC,killFlds)
+
+#Add averge field and decile field
+msg("...adding average uplift fld")
+avgFldName = "MeanUplift"
+arcpy.AddField_management(outFC,avgFldName,"DOUBLE")
+msg("...adding decile rank fld")
+rankFldName = "UpliftRank"
+arcpy.AddField_management(outFC,rankFldName,"SHORT")
+
+#Initialize a list of uplift fields so we can average them later
 upliftFlds = []
 
 #Loop through the species folders and append the uplift columns to a master FC
-for sppDir in sppDirs:
-    #Truncate the species name to first letter of genus and 1st five letters of species
-    genus,species = sppDir.split("_")
-    sppName = genus[0].upper()+"_"+species[:7]
+msg("Merging species tables")
+for sppTbl in sppTbls:
+    #Get the uplift field (the last field in the table) and add it to the list
+    upliftFld = arcpy.ListFields(sppTbl)[-1].name
+    msg("...adding {}".format(upliftFld))
+    upliftFlds.append(upliftFld)
 
-    msg("Processing {} as {}".format(sppDir,sppName))
-    
-    #Fields to modify
-    fromFlds = ("PRED__{}".format(scenarioPrefix),"Uplift_{}".format(scenarioPrefix))
-    toFlds = ("{}_{}_pred".format(scenarioPrefix,sppName),"{}_{}_up".format(scenarioPrefix,sppName))
-
-    #Add the new uplift field to the list
-    upliftFlds.append(toFlds[1])
-    
-    #Get the results fc
-    sppFC = os.path.join(statsRootFldr,sppDir,resultsFC)
-
-    if sppDir == sppDirs[0]:
-        #If its the first folder, copy the  ME_output file to the temp outputFC
-        msg("Initializing temporary output feature class")
-        firstFC = os.path.join(sppDirs[0],sppFC)
-        #arcpy.CopyFeatures_management(firstFC,tmpOutput)
-        whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
-        arcpy.Select_analysis(firstFC,tmpOutput,whereClause)
-
-    else:
-        #Otherwise, join the prediction and uplift fields of the ME_output file to the outputFC
-        msg("...appending fields")
-        arcpy.JoinField_management(tmpOutput,"GRIDCODE",sppFC,"GRIDCODE",fromFlds)
-
-    #Rename last two fields to hold the species name
-    for i in (0,1):
-        fromFld = fromFlds[i]
-        toFld = toFlds[i]
-        arcpy.AlterField_management(tmpOutput,fromFld,toFld,toFld)
+    #Join the field to the outFC
+    arcpy.JoinField_management(outFC,"GRIDCODE",sppTbl,"GRIDCODE",upliftFld)
 
 ##Compute averge uplift across species
 #Make a calculate string from the upliftFlds
@@ -87,31 +107,22 @@ for upliftFld in upliftFlds:
 #Modify the string to calculate averages
 calcString = calcString[:-3] + ") / {}".format(len(upliftFlds))
 
-#Add a field to the output FC for average uplift
-msg("...adding the average field")
-avgFld = "{}_avgUplift".format(scenarioPrefix)
-arcpy.AddField_management(tmpOutput,avgFld,"DOUBLE")
-
 #Apply the calcString
 msg("...calculating average uplift")
-arcpy.CalculateField_management(tmpOutput,avgFld,calcString)
+arcpy.CalculateField_management(outFC,avgFldName,calcString)
 
 ##Compute deciles
-#Add decile field
-msg("...adding the decile field")
-decileFld = "{}_decile".format(scenarioPrefix)
-arcpy.AddField_management(tmpOutput,decileFld,"LONG")
-
+msg("Computing ranks")
 #Get the number of records and determine the quantile size
-numRecs = int(arcpy.GetCount_management(tmpOutput).getOutput(0))
+numRecs = int(arcpy.GetCount_management(outFC).getOutput(0))
 decileSize = numRecs / 10.0
-#deciles = range(decileSize,numRecs+1,decileSize) #list of decile upper limits
-decile = 1   #Index of decile's upper limit
-ceiling = decileSize  #Initial decile value
-counter = 1 #Counter that increases with each record
+#Set the counter variables
+decile = 1              #Index of decile's upper limit
+ceiling = decileSize    #Initial decile value
+counter = 1             #Counter that increases with each record
 
 #Create the update cursor, sorted on average uplift
-records = arcpy.UpdateCursor(tmpOutput,"","","{}; {}".format(avgFld,decileFld),"{} A".format(avgFld))
+records = arcpy.UpdateCursor(outFC,"","","{}; {}".format(avgFldName,rankFldName),"{} A".format(avgFldName))
 rec = records.next()
 while rec:
     #Check to see if we've entered a new decile, if so, increase the index
@@ -119,12 +130,9 @@ while rec:
         ceiling += decileSize   #...raise the ceiling
         decile += 1           #...up the decile value
     #Assign the quantile to the decileFld
-    rec.setValue(decileFld,decile)
+    rec.setValue(rankFldName,decile)
     records.updateRow(rec)
     #Move to the next record
     counter += 1
     rec = records.next()
         
-
-#Save results
-arcpy.CopyFeatures_management(tmpOutput,outFC)
