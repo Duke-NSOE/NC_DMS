@@ -4,22 +4,18 @@ NHD.gdb
 NHDrasters
 NLCDdata
 
-# HUC6 Geodatabases
-Data/EEP_*.gdb/
-
 # Results GDB
 Data/*.gdb
 Data/*.sde
 
-Scratch/*
+# Misc info dir in Data folder
+Data/info
 
-# Stat results folder
+# Stat results folders
 Data/Habitat*
 Data/MACP
 Data/PiedmontStats
 
-# Docs in progress
-Docs/*.pptx
 
 # 
 EEP_HabitatStatistics.tbx
@@ -27,6 +23,8 @@ Scripts/Explore_SpeciesHUC8.py
 Scripts/ScriptTemplate.py
 DataExploration.tbx
 
-
+#ArcMap LOCK files
 *.lock
+
+#Docs for creating figures
 FigsSept2015.mxd
