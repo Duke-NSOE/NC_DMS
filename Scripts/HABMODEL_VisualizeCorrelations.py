@@ -207,6 +207,7 @@ f.write('''            // Instantiate our network object.
       var options = {
         nodes: {
           shape: 'dot',
+          color: {highlight:{background: 'yellow'}}
         },
         interaction: {
             navigationButtons: true,
