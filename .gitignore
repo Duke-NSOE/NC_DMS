@@ -9,6 +9,7 @@ Data/*.gdb
 Data/*.sde
 Data/*.zip
 Data/nlcd2030/*
+Data/nlcd2030*
 
 # Misc info dir in Data folder
 Data/info
