@@ -7,6 +7,8 @@ NLCDdata
 # Results GDB
 Data/*.gdb
 Data/*.sde
+Data/*.zip
+Data/nlcd2030/*
 
 # Misc info dir in Data folder
 Data/info
@@ -15,7 +17,6 @@ Data/info
 Data/Habitat*
 Data/MACP
 Data/PiedmontStats
-
 
 # 
 EEP_HabitatStatistics.tbx
