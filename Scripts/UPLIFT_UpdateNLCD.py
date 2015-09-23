@@ -33,9 +33,16 @@ def msg(txt,type="message"):
         arcpy.AddError(txt)
 
 ## PROCESSES
-# Make NLCD level 1 dataset (e.g. classes 21, 22, 23, 24 become class "2")
-msg("...Making level 1 NLCD raster dataset")
-NLCD1_raster = arcpy.sa.Int(arcpy.Raster(nlcdRaster) / 10)
+# Check to see whether the NLCD is already level 1; reduce if it is
+msg("...Determining whether NLCD is level 1 or not")
+maxVal = int(arcpy.GetRasterProperties_management(nlcdRaster,"MAXIMUM").getOutput(0))
+if maxVal > 10:
+    # Make NLCD level 1 dataset (e.g. classes 21, 22, 23, 24 become class "2")
+    msg("   Making level 1 NLCD raster dataset")
+    NLCD1_raster = arcpy.sa.Int(arcpy.Raster(nlcdRaster) / 10)
+else:
+    msg("   NLCD raster is level one; continuing")
+    NLCD1_raster = nlcdRaster
 
 # Tabulate areas of each class within the catchments
 msg("...Tabulating NLCD areas in each catchment")
