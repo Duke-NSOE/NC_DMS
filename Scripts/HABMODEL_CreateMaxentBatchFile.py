@@ -23,6 +23,9 @@ autorun = arcpy.GetParameterAsText(1)           # Whether or not to set autorun
 maxentFile = os.path.join(os.path.dirname(swdFile),"RunMaxent.bat")
 arcpy.SetParameterAsText(2,maxentFile)
 
+# Number of processors
+numProcessors = 16
+
 ## ---Functions---
 def msg(txt,type="message"):
     print txt
@@ -77,9 +80,13 @@ runString += " pictures=false"
 msg("...Disabling drawing plots")
 runString += " plots=false"
 
-# enable jackknifing
+# disable jackknifing
 msg("...Disabling jackknifing")
 runString += " jackknife=false"
+
+# enable overwrite
+msg("...Allowing overwriting existing output")
+runString += " askoverwrite=false"
 
 ### write background predictions
 ##msg("...writing background predictions")
@@ -94,8 +101,8 @@ msg("...Setting NoData value to -9999")
 runString += " nodata=9999"
 
 # enable 8 threads to speed processing
-msg("...Running Maxent on 8 processors")
-runString += " threads=8"
+msg("...Running Maxent on {} processors".format(numProcessors))
+runString += " threads={}".format(numProcessors)
 
 # setting to autorun
 if autorun == "true":
