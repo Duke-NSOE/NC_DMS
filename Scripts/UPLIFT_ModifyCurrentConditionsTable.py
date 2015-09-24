@@ -13,10 +13,10 @@
 import sys, os, arcpy
 
 #User variables
-origRVTbl = arcpy.GetParameterAsText(0)     # Catchment variables under current conditions
+origRvFC = arcpy.GetParameterAsText(0)      # Catchment variables under current conditions
 changeFld = arcpy.GetParameterAsText(1)     # Field to change
 changeFactor = arcpy.GetParameterAsText(2)  # Factor by which to change the field
-upliftTbl = arcpy.GetParameterAsText(3)     # Revised catchment attribute table
+upliftFC = arcpy.GetParameterAsText(3)      # Revised catchment condition feature class
 
 #Set environments
 arcpy.env.overwriteOutput = True
@@ -34,11 +34,11 @@ def msg(txt,type="message"):
 ## PROCESSES 
 #Make a copy of the responseVariableTable
 msg("Copying catchment current conditions table")
-upliftTbl = arcpy.CopyRows_management(origRVTbl,upliftTbl)
+upliftFC = arcpy.CopyFeatures_management(origRvFC,upliftFC)
 
 #Alter the field by the factor
 msg("Changing {} by a factor of {}".format(changeFld,changeFactor))
-arcpy.CalculateField_management(upliftTbl,changeFld,"[{}] * {}".format(changeFld,changeFactor))
+arcpy.CalculateField_management(upliftFC,changeFld,"[{}] * {}".format(changeFld,changeFactor))
 
 
 
