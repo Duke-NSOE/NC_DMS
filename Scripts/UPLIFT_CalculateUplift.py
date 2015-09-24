@@ -74,7 +74,7 @@ msg("...Locating the current conditions output for HUC {}".format(HUCFilter))
 currentASC = os.path.join(sppFolder,"XX_Output","{}_XX_Output.asc".format(speciesName))
 #If it's not there, check the main output folder
 if not os.path.exists(currentASC):
-    msg("Projected output not found in {}_XX_Output.asc. Searching the main folder.".format(speciesName),"warning")
+    msg("Projected output not found in {}_XX_Output.asc. Searching the main folder.".format(speciesName))
     currentASC = os.path.join(sppFolder,"Output","{}_XX_Output.asc".format(speciesName))
     checkFile(currentASC)
     msg("...Found it!")
@@ -83,7 +83,7 @@ if not os.path.exists(currentASC):
 msg("...Locating the projected conditions output for HUC {}".format(HUCFilter))
 projectedASC = os.path.join(scenarioFolder,"{}_{}_Output.asc".format(speciesName,scenarioName))
 if not os.path.exists(projectedASC):
-    msg("Projected output not found in {}_XX_Output.asc. Searching the main folder.".format(speciesName),"warning")
+    msg("Projected output not found in {}_XX_Output.asc. Searching the main folder.".format(speciesName))
     projectedASC = os.path.join(sppFolder,"Output","{}_{}_Output.asc".format(speciesName,scenarioName))
     checkFile(projectedASC)
     msg("...Found it!")
