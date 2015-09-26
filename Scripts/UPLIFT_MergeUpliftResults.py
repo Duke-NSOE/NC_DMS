@@ -24,7 +24,6 @@ statsRootFldr = arcpy.GetParameterAsText(1) #Folder containing all species stats
 catchmentFC = arcpy.GetParameterAsText(2)   #Catchment features, used to add uplift values to
 HUCFilter = arcpy.GetParameterAsText(3)     #HUC Filter used to find tables and select appropriate catchment from the FC
 
-
 ## ---Functions---
 def msg(txt,type="message"):
     print txt
@@ -74,7 +73,10 @@ for fld in arcpy.ListFields(outFC):
         killFlds.append(fld.name)
 arcpy.DeleteField_management(outFC,killFlds)
 
-#Add averge field and decile field
+#Add average likelihood, averge field, and decile field
+msg("...adding mean current likelihood field")
+curFldName - "MeanLikelihood")
+arcpy.AddField_management(outFC,curFldName,"DOUBLE")
 msg("...adding average uplift fld")
 avgFldName = "MeanUplift"
 arcpy.AddField_management(outFC,avgFldName,"DOUBLE")
@@ -82,19 +84,38 @@ msg("...adding decile rank fld")
 rankFldName = "UpliftRank"
 arcpy.AddField_management(outFC,rankFldName,"SHORT")
 
-#Initialize a list of uplift fields so we can average them later
+#Initialize a list of current and uplift fields so we can average them later
+curFlds = []
 upliftFlds = []
 
 #Loop through the species folders and append the uplift columns to a master FC
 msg("Merging species tables")
 for sppTbl in sppTbls:
+    #Get the current condition field (the 3rd field) and add it to the curFlds list
+    curFld = arcpy.ListFields(sppTbl,"*cur*")[0].name
+    curFlds.append(curFld)
     #Get the uplift field (the last field in the table) and add it to the list
     upliftFld = arcpy.ListFields(sppTbl)[-1].name
-    msg("...adding {}".format(upliftFld))
     upliftFlds.append(upliftFld)
 
     #Join the field to the outFC
     arcpy.JoinField_management(outFC,"GRIDCODE",sppTbl,"GRIDCODE",upliftFld)
+
+##Compute average habitat likelihood across species
+#Make a calcualte string from the habitat fields
+msg("Calculating average current likelihood")
+msg("...constructing the equation")
+calcString = "("
+for curFld in curFlds:
+    calcString += "[{}] + ".format(curFld)
+
+#Modify the string to calculate averages
+calcString = calcString[:-3] + ") / {}".format(len(curFlds))
+
+#Apply the calcString
+msg("...calculating average likelihood")
+arcpy.CalculateField_management(outFC,avgFldName,calcString)
+
 
 ##Compute averge uplift across species
 #Make a calculate string from the upliftFlds
@@ -109,9 +130,9 @@ calcString = calcString[:-3] + ") / {}".format(len(upliftFlds))
 
 #Apply the calcString
 msg("...calculating average uplift")
-arcpy.CalculateField_management(outFC,avgFldName,calcString)
+arcpy.CalculateField_management(outFC,curFldName,calcString)
 
-##Compute deciles
+##Compute deciles -- NEED TO FIX THIS - STILL COMPUTES DECILES IF ALL VALUE ARE THE SAME
 msg("Computing ranks")
 #Get the number of records and determine the quantile size
 numRecs = int(arcpy.GetCount_management(outFC).getOutput(0))
