@@ -75,7 +75,7 @@ arcpy.DeleteField_management(outFC,killFlds)
 
 #Add average likelihood, averge field, and decile field
 msg("...adding mean current likelihood field")
-curFldName - "MeanLikelihood")
+curFldName = "MeanLikelihood"
 arcpy.AddField_management(outFC,curFldName,"DOUBLE")
 msg("...adding average uplift fld")
 avgFldName = "MeanUplift"
@@ -98,8 +98,8 @@ for sppTbl in sppTbls:
     upliftFld = arcpy.ListFields(sppTbl)[-1].name
     upliftFlds.append(upliftFld)
 
-    #Join the field to the outFC
-    arcpy.JoinField_management(outFC,"GRIDCODE",sppTbl,"GRIDCODE",upliftFld)
+    #Join the fields to the outFC
+    arcpy.JoinField_management(outFC,"GRIDCODE",sppTbl,"GRIDCODE",(curFld,upliftFld))
 
 ##Compute average habitat likelihood across species
 #Make a calcualte string from the habitat fields
@@ -114,7 +114,7 @@ calcString = calcString[:-3] + ") / {}".format(len(curFlds))
 
 #Apply the calcString
 msg("...calculating average likelihood")
-arcpy.CalculateField_management(outFC,avgFldName,calcString)
+arcpy.CalculateField_management(outFC,curFldName,calcString)
 
 
 ##Compute averge uplift across species
@@ -130,7 +130,7 @@ calcString = calcString[:-3] + ") / {}".format(len(upliftFlds))
 
 #Apply the calcString
 msg("...calculating average uplift")
-arcpy.CalculateField_management(outFC,curFldName,calcString)
+arcpy.CalculateField_management(outFC,avgFldName,calcString)
 
 ##Compute deciles -- NEED TO FIX THIS - STILL COMPUTES DECILES IF ALL VALUE ARE THE SAME
 msg("Computing ranks")
