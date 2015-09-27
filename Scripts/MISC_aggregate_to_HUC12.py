@@ -1,8 +1,17 @@
 # MISC_aggregate_to_HUC12.py
 #
 # Description:
-#  Upscales catchment data to the HUC12 using area weighted means. The input feature
-#  class must have a REACHCODE field and and shape_area field. 
+#  Upscales catchment data to the HUC12 using area weighted means. Inputs are the catchment feature
+#  class containing the fields you want to upscale, the fields to upscale, a GRIDCODE-HUC12 lookup
+#  table (located in the NC_Results.gdb).
+#
+# Overview:
+#  - Copies the original feature class
+#  - Joins the HUC_12 field to this copy
+#  - Multiplies the join fields by the catchment area (for area weighting)
+#  - Dissolved features on the HUC_12 attribute, computing the sum of the field*area values
+#  - Renames the sum fields back to original field names and divides by the dissolved area
+#    to revert values to original ones. 
 #
 # Fall 2015
 # John.Fay@duke.edu
