@@ -13,7 +13,8 @@ arcpy.env.overwriteOutput = 1
 # Input variables
 inputFC = arcpy.GetParameterAsText(0)       #Feature class to upscale
 upscaleFlds = arcpy.GetParameterAsText(1)   #Fields to upscale
-outputFC = arcpy.GetParameterAsText(2)     #Output HUC12 feature class
+HUC12Tbl = arcpy.GetParameterAsText(2)      #Catchment FC containing HUC12 values
+outputFC = arcpy.GetParameterAsText(3)      #Output HUC12 feature class
 
 ## ---Functions---
 def msg(txt,type="message"):
@@ -31,13 +32,8 @@ def msg(txt,type="message"):
 msg("Creating temp feature class")
 tmpFC = arcpy.CopyFeatures_management(inputFC,"in_memory/tmpFC1")
 
-#Add a HUC 12 field
-msg("...adding HUC12 field")
-arcpy.AddField_management(tmpFC,"HUC12","DOUBLE")
-
-#Calculate HUC12 from ReachCode
-msg("...calculating HUC12 from REACHCODE")
-arcpy.CalculateField_management(tmpFC,"HUC12","!REACHCODE![:12]","PYTHON")
+#Join the HUC12 field to the tmpFC
+arcpy.JoinField_management(tmpFC,"GRIDCODE",HUC12Tbl,"GRIDCODE","HUC_12")
 
 #Initilize the Dissolve field list
 fldList = []
@@ -57,7 +53,7 @@ for fldName in upscaleFlds.split(";"):
 
 #Dissolve on HUC12
 msg("Dissolving data on HUC12")
-tmpFC2 = arcpy.Dissolve_management(tmpFC,"in_memory/tmpFC2","HUC12",fldList)
+tmpFC2 = arcpy.Dissolve_management(tmpFC,"in_memory/tmpFC2","HUC_12",fldList)
 
 #Recalculate fields
 for fldName in upscaleFlds.split(";"):
