@@ -7,6 +7,9 @@ NLCDdata
 # Results GDB
 Data/*.gdb
 Data/*.sde
+Data/*.zip
+Data/nlcd2030/*
+Data/nlcd2030*
 
 # Misc info dir in Data folder
 Data/info
@@ -14,8 +17,7 @@ Data/info
 # Stat results folders
 Data/Habitat*
 Data/MACP
-Data/PiedmontStats
-
+Data/Piedmont
 
 # 
 EEP_HabitatStatistics.tbx
@@ -31,3 +33,4 @@ FigsSept2015.mxd
 
 #Ignore contents of the Scratch folder
 Scratch/*
+info/arc.dir

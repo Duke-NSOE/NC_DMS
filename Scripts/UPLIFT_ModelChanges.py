@@ -102,7 +102,7 @@ fldNames = cursor.fields
 total = len(fldNames)
 for fld in fldNames:
     fldIndex = cursor.fields.index(fld)
-    msg("   Converting {} [{} of {}]".format(fld,fldIndex+1,total))
+    #msg("   Converting {} [{} of {}]".format(fld,fldIndex+1,total))
     #Initialize output file
     outFile = open(os.path.join(scenarioFolder,"{}.asc".format(fld)),'w')
     outFile.write(asciiHeader)
