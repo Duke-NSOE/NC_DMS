@@ -40,9 +40,12 @@ def msg(txt,type="message"):
 msg("Extracting stream cells from NHD flowdir null raster")
 streamRaster = sa.IsNull(fldrnullRaster)
 
-# Reduce NLCD to Level 1
-msg("Reducing NLCD classes to level 1")
-NLCD_L1 = sa.Int(arcpy.Raster(nlcdRaster) / 10)
+# Reduce NLCD to Level 1, if needed
+if arcpy.GetRasterProperties_management(nlcdRaster,"MAXIMUM") > 10:
+    msg("Reducing NLCD classes to level 1")
+    NLCD_L1 = sa.Int(arcpy.Raster(nlcdRaster) / 10)
+else:
+    NLCD_L1 = nlcdRaster
 
 # If pixel is a stream, set to NLCD
 msg("Converting stream cells to NLCD classes") 
