@@ -1,4 +1,4 @@
-# UPLIFT_CalcUpstreamNLCD
+# EEP_CalcUpstreamNLCD
 #
 # Description: Calculates upstream area of grouped land cover types using flow accumulation
 #
@@ -22,10 +22,6 @@ upDev = arcpy.GetParameterAsText(2)
 upForest = arcpy.GetParameterAsText(3)
 upAg = arcpy.GetParameterAsText(4)
 upWet = arcpy.GetParameterAsText(5)
-
-#Set environments
-env.mask = nlcd
-env.extent = nlcd
 
 #Upstream developed
 arcpy.AddMessage("Calculating upstream developed") 
