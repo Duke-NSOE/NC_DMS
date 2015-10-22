@@ -60,7 +60,7 @@ rvJoin = arcpy.AddJoin_management(rvLyr,"GRIDCODE",nlcdStats,"GRIDCODE")
 for fld in arcpy.ListFields(nlcdStats)[2:]:
     toFld = fld.name
     fromFld = toFld.replace("VALUE_","NLCD")
-    msg("...updating {} with {}".format(toFld,fromFld))
+    msg("...updating {} with ".format(toFld,fromFld))
     
     # Get the update and calc field names
     updateFld = os.path.basename(respvarsFC) + "." + fromFld
