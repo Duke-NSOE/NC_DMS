@@ -34,6 +34,7 @@ def msg(txt,type="message"):
     elif type == "error":
         arcpy.AddError(txt)
 
+
 # ---Processes---
 # Invert the fldirnull raster
 msg("Extracting stream cells from NHD flowdir null raster")
