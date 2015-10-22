@@ -1,4 +1,4 @@
-# EEP_CalcUpstreamNLCD
+# UPLIFT_CalcUpstreamNLCD
 #
 # Description: Calculates upstream area of grouped land cover types using flow accumulation
 #
@@ -29,25 +29,25 @@ env.extent = nlcd
 
 #Upstream developed
 arcpy.AddMessage("Calculating upstream developed") 
-dev = Con(nlcd, 1, 0, '"Value" IN (21,22,23,24)')
+dev = Con(nlcd, 1, 0, '"Value" IN (2,21,22,23,24)')
 accDev = FlowAccumulation(fldir,dev,"INTEGER")
 accDev.save(upDev)
 
 #Upstream forest
 arcpy.AddMessage("Calculating upstream forest") 
-forest = Con(nlcd,1,0,'"Value" IN (41,42,43)')
+forest = Con(nlcd,1,0,'"Value" IN (4,41,42,43)')
 accFor = FlowAccumulation(fldir,forest,"INTEGER")
 accFor.save(upForest)
 
 #Upstream ag
 arcpy.AddMessage("Calculating upstream agriculture") 
-ag = Con(nlcd, 1, 0, '"Value" IN (81,82)')
+ag = Con(nlcd, 1, 0, '"Value" IN (8,81,82)')
 accAg = FlowAccumulation(fldir,ag,"INTEGER")
 accAg.save(upAg)
 
 #Upstream wetland
 arcpy.AddMessage("Calculating upstream wetland") 
-wtland = Con(nlcd, 1, 0, '"Value" IN (90,95)')
+wtland = Con(nlcd, 1, 0, '"Value" IN (9,90,95)')
 accWet = FlowAccumulation(fldir,wtland,"INTEGER")
 accWet.save(upWet)
 
