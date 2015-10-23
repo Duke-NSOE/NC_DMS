@@ -69,10 +69,13 @@ except:
 
 msg("Identifying cells within {}m in elevation from stream cell".format(zThreshold))
 elevDiff = sa.Minus(elevRaster,elevSheds)
-#elevDiff.save()
 
-msg("Simplifying land cover to level 1")
-nlcdLevel1 = sa.Int(arcpy.Raster(nlcdRaster) / (10))
+# Reduce NLCD to level 1, if not already
+if int(arcpy.GetRasterProperties_management(nlcdRaster,"MAXIMUM").getOutput(0)) > 10:
+    msg("Simplifying land cover to level 1")
+    nlcdLevel1 = sa.Int(arcpy.Raster(nlcdRaster) / (10))
+else:
+    nlcdLevel1 = nlcdRaster
 
 msg("Extracting land cover within riparian cells")
 riparianNLCD = sa.SetNull(elevDiff,nlcdLevel1,'VALUE > {}'.format(zThreshold))
