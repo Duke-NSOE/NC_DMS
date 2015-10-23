@@ -1,0 +1,1 @@
+Use the links in this folder to download self extracting files containing NHD rasters required to compute upslope accumulated land cover.
