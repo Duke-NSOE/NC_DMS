@@ -90,9 +90,9 @@ catchLyr = arcpy.MakeFeatureLayer_management(SpeciesFC,"catchLyr","","",fldInfo)
 
 #Make a where clause if a HUC was given
 if HUCFilter in ("","#"):
-    whereClause = "NC = 1"
+    whereClause = ""
 else:
-    whereClause = "NC = 1 AND REACHCODE LIKE '{}%'".format(HUCFilter)
+    whereClause = "REACHCODE LIKE '{}%'".format(HUCFilter)
 
 #Make a copy of the feature layer
 msg("Selecting catchment features")
