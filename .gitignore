@@ -1,7 +1,7 @@
 # Primary source geodatabases
 NC.gdb
 NHD.gdb
-NHDrasters
+NHDdatasets
 NLCDdata
 
 # Results GDB
