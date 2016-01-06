@@ -73,10 +73,13 @@ for fld in arcpy.ListFields(outFC):
         killFlds.append(fld.name)
 arcpy.DeleteField_management(outFC,killFlds)
 
-#Add average likelihood, averge field, and decile field
-msg("...adding mean current likelihood field")
+#Add average current likelihood, current rank, averge uplift field, and uplift rank fields
+msg("...adding mean current likelihood field")          
 curFldName = "MeanLikelihood"
 arcpy.AddField_management(outFC,curFldName,"DOUBLE")
+msg("...adding current likelihood rank field")
+curRankFld = "CurrentRank"
+arcpy.AddField_management(outFC,curRankFld,"SHORT")
 msg("...adding average uplift fld")
 avgFldName = "MeanUplift"
 arcpy.AddField_management(outFC,avgFldName,"DOUBLE")
@@ -102,7 +105,7 @@ for sppTbl in sppTbls:
     arcpy.JoinField_management(outFC,"GRIDCODE",sppTbl,"GRIDCODE",(curFld,upliftFld))
 
 ##Compute average habitat likelihood across species
-#Make a calcualte string from the habitat fields
+#Make a calculate string from the habitat fields
 msg("Calculating average current likelihood")
 msg("...constructing the equation")
 calcString = "("
@@ -115,7 +118,6 @@ calcString = calcString[:-3] + ") / {}".format(len(curFlds))
 #Apply the calcString
 msg("...calculating average likelihood")
 arcpy.CalculateField_management(outFC,curFldName,calcString)
-
 
 ##Compute averge uplift across species
 #Make a calculate string from the upliftFlds
@@ -132,8 +134,8 @@ calcString = calcString[:-3] + ") / {}".format(len(upliftFlds))
 msg("...calculating average uplift")
 arcpy.CalculateField_management(outFC,avgFldName,calcString)
 
-##Compute deciles -- NEED TO FIX THIS - STILL COMPUTES DECILES IF ALL VALUE ARE THE SAME
-msg("Computing ranks")
+##Compute deciles on current condition values
+msg("Computing current condition deciles")
 #Get the number of records and determine the quantile size
 numRecs = int(arcpy.GetCount_management(outFC).getOutput(0))
 decileSize = numRecs / 10.0
@@ -143,14 +145,47 @@ ceiling = decileSize    #Initial decile value
 counter = 1             #Counter that increases with each record
 
 #Create the update cursor, sorted on average uplift
-records = arcpy.UpdateCursor(outFC,"","","{}; {}".format(avgFldName,rankFldName),"{} A".format(avgFldName))
+records = arcpy.UpdateCursor(outFC,"","","{}; {}".format(curFldName,curRankFld),"{} A".format(curFldName))
 rec = records.next()
 while rec:
     #Check to see if we've entered a new decile, if so, increase the index
     if counter > ceiling:       #If the current rec passes the ceiling
         ceiling += decileSize   #...raise the ceiling
         decile += 1           #...up the decile value
-    #Assign the quantile to the decileFld
+    #Assign the quantile to the rank field
+    rec.setValue(curRankFld,decile)
+    records.updateRow(rec)
+    #Move to the next record
+    counter += 1
+    rec = records.next()
+        
+##Compute deciles on uplift values
+msg("Computing uplift deciles")
+
+#Set the where clause
+lowerBound = float("0")
+upperBound = float("0")
+whereClause = "{0} < {1} OR {0} > {2}".format(avgFldName,lowerBound,upperBound)
+selFC = arcpy.MakeFeatureLayer_management(outFC,"Lyr",whereClause)
+
+#Get the number of records and determine the quantile size
+numRecs = int(arcpy.GetCount_management(selFC).getOutput(0))
+msg("{} Records used".format(numRecs))
+decileSize = numRecs / 10.0
+#Set the counter variables
+decile = 1              #Index of decile's upper limit
+ceiling = decileSize    #Initial decile value
+counter = 1             #Counter that increases with each record
+
+#Create the update cursor, sorted on average uplift
+records = arcpy.UpdateCursor(outFC,whereClause,"","{}; {}".format(avgFldName,rankFldName),"{} A".format(avgFldName))
+rec = records.next()
+while rec:
+    #Check to see if we've entered a new decile, if so, increase the index
+    if counter > ceiling:       #If the current rec passes the ceiling
+        ceiling += decileSize   #...raise the ceiling
+        decile += 1           #...up the decile value
+    #Assign the quantile to the rank field
     rec.setValue(rankFldName,decile)
     records.updateRow(rec)
     #Move to the next record
