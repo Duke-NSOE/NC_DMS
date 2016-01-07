@@ -166,7 +166,8 @@ msg("Computing uplift deciles")
 lowerBound = float("0")
 upperBound = float("0")
 whereClause = "{0} < {1} OR {0} > {2}".format(avgFldName,lowerBound,upperBound)
-selFC = arcpy.MakeFeatureLayer_management(outFC,"Lyr",whereClause)
+##selFC = arcpy.MakeFeatureLayer_management(outFC,"Lyr",whereClause) ##<--use this to exclude fields within range
+selFC = outFC ##<-- use this to include all records
 
 #Get the number of records and determine the quantile size
 numRecs = int(arcpy.GetCount_management(selFC).getOutput(0))
