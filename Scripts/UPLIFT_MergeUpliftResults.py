@@ -161,17 +161,8 @@ while rec:
         
 ##Compute deciles on uplift values
 msg("Computing uplift deciles")
-
-#Set the where clause
-lowerBound = float("0")
-upperBound = float("0")
-whereClause = "{0} < {1} OR {0} > {2}".format(avgFldName,lowerBound,upperBound)
-##selFC = arcpy.MakeFeatureLayer_management(outFC,"Lyr",whereClause) ##<--use this to exclude fields within range
-selFC = outFC ##<-- use this to include all records
-
 #Get the number of records and determine the quantile size
-numRecs = int(arcpy.GetCount_management(selFC).getOutput(0))
-msg("{} Records used".format(numRecs))
+numRecs = int(arcpy.GetCount_management(outFC).getOutput(0))
 decileSize = numRecs / 10.0
 #Set the counter variables
 decile = 1              #Index of decile's upper limit
